@@ -58,11 +58,12 @@ class BinarySearchTree:
             left_size = self.left.size
         if ind == left_size:
             return self
-        if left_size > ind and self.left is not None:
+        elif ind < left_size and self.left is not None:
             return self.left.select(ind)
-        if left_size < ind and self.right is not None:
-            return self.right.select(ind)
-        return None
+        elif ind > left_size and self.right is not None:
+            return self.right.select(ind - left_size - 1)
+        else:
+            return None
 
 
     '''
@@ -70,14 +71,21 @@ class BinarySearchTree:
     returns a pointer to the object with target key or None (Roughgarden)
     '''
     def search(self, key):
-        if self is None:
-            return None
-        elif self.key == key:
+        # if self is None:
+        #     return None
+        # elif self.key == key:
+        #     return self
+        # elif self.key < key and self.right is not None:
+        #     return self.right.search(key)
+        # elif self.left is not None:
+        #     return self.left.search(key)
+        # return None
+        if self.key == key:
             return self
-        elif self.key < key and self.right is not None:
-            return self.right.search(key)
-        elif self.left is not None:
+        elif key < self.key and self.left:
             return self.left.search(key)
+        elif key > self.key and self.right:
+            return self.right.search(key)
         return None
     
 
@@ -89,19 +97,35 @@ class BinarySearchTree:
     returns the original (top level) tree - allows for easy chaining in tests
     '''
     def insert(self, key):
-        if self.key is None:
+        # if self.key is None:
+        #     self.key = key
+        # elif self.key > key: 
+        #     if self.left is None:
+        #         self.left = BinarySearchTree(self.debugger)
+        #     self.left.insert(key)
+        # elif self.key < key:
+        #     if self.right is None:
+        #         self.right = BinarySearchTree(self.debugger)
+        #     self.right.insert(key)
+        # self.calculate_sizes()
+        # return self
+        if not self.key:
             self.key = key
-        elif self.key > key: 
-            if self.left is None:
+            self.size = 1
+        elif key < self.key:
+            if not self.left:
                 self.left = BinarySearchTree(self.debugger)
             self.left.insert(key)
-        elif self.key < key:
-            if self.right is None:
+        elif key > self.key:
+            if not self.right:
                 self.right = BinarySearchTree(self.debugger)
             self.right.insert(key)
-        self.calculate_sizes()
+        self.size = 1
+        if self.left:
+            self.size += self.left.size
+        if self.right:
+            self.size += self.right.size
         return self
-
     
     ####### Part b #######
 
@@ -128,6 +152,72 @@ class BinarySearchTree:
     '''
     def rotate(self, direction, child_side):
         # Your code goes here
+        if child_side == "L":
+            child = self.left
+            if not child:
+                return self
+            if direction == "L":
+                new_root = child.right
+                if not new_root:
+                    return self
+                child.right = new_root.left
+                if new_root.left:
+                    new_root.left.parent = child
+                new_root.left = child
+                child.parent = new_root
+                self.left = new_root
+                child.size = ((child.left.size if child.left else 0) + 
+                              (child.right.size if child.right else 0) + 1)
+                new_root.size = child.size + (new_root.right.size if new_root.right else 0) + 1
+            elif direction == "R":
+                new_root = child.left
+                if not new_root:
+                    return self
+                child.left = new_root.right
+                if new_root.right:
+                    new_root.right.parent = child
+                new_root.right = child
+                child.parent = new_root
+                self.left = new_root
+                child.size = ((child.left.size if child.left else 0) + 
+                              (child.right.size if child.right else 0) + 1)
+                new_root.size = (new_root.left.size if new_root.left else 0) + child.size + 1
+        elif child_side == "R":
+            child = self.right
+            if child is None:
+                return self
+            if direction == "L":
+                new_root = child.right
+                if new_root is None:
+                    return self
+                child.right = new_root.left
+                if new_root.left is not None:
+                    new_root.left.parent = child
+                new_root.left = child
+                child.parent = new_root
+                self.right = new_root
+                child.size = ((child.left.size if child.left else 0) +
+                            (child.right.size if child.right else 0) + 1)
+                new_root.size = child.size + (new_root.right.size if new_root.right else 0) + 1
+            elif direction == "R":
+                new_root = child.left
+                if new_root is None:
+                    return self
+                child.left = new_root.right
+                if new_root.right is not None:
+                    new_root.right.parent = child
+                new_root.right = child
+                child.parent = new_root
+                self.right = new_root
+                child.size = ((child.left.size if child.left else 0) +
+                            (child.right.size if child.right else 0) + 1)
+                new_root.size = (new_root.left.size if new_root.left else 0) + child.size + 1
+        else:
+            raise ValueError("child_side must be 'L' or 'R'")
+        
+        self.size = ((self.left.size if self.left else 0) +
+                    (self.right.size if self.right else 0) + 1)
+        
         return self
 
     def print_bst(self):

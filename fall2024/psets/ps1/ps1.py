@@ -68,4 +68,29 @@ def BC(n, b, k):
 
 def radixSort(univsize, base, arr):
     """TODO: Implement Radix Sort using BC and singletonBucketSort"""
-    return [] 
+    n = len(arr)
+    k = (univsize - 1).bit_length() // (base - 1).bit_length() + 1
+    
+    V_prime = []
+    for i in range(n):
+        K_i, V_i = arr[i]
+        V_i_prime = BC(K_i, base, k)
+        V_prime.append((V_i_prime, V_i))
+    
+    for j in range(k):
+        K_prime = []
+        for i in range(n):
+            V_i_prime, V_i = V_prime[i]
+            K_i_prime = V_i_prime[j]
+            K_prime.append((K_i_prime, (V_i_prime, V_i)))
+        
+        K_prime = singletonBucketSort(base, K_prime)
+        V_prime = [item[1] for item in K_prime]
+    
+    sorted_A = []
+    for i in range(n):
+        V_i_prime, V_i = V_prime[i]
+        K_i = sum(V_i_prime[idx] * (base ** idx) for idx in reversed(range(k)))
+        sorted_A.append((K_i, V_i))
+    
+    return sorted_A

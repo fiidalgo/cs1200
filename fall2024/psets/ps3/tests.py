@@ -80,7 +80,91 @@ divide = [5,
             ['write', output_ptr_id, 3],
         ]
 
-def test() :
+# TODO: Add more test cases
+# TEST ADDITION: Add two nums and store res in memory
+addition = [6,
+            ['assign', output_len_id, 1],
+            ['assign', output_ptr_id, 0],
+            ['assign', 3, 10],
+            ['assign', 4, 5],
+            ['+', 5, 3, 4],
+            ['write', output_ptr_id, 5]]
+
+# TEST MULTIPLICATION: Multiply two nums and store res
+multiplication = [6,
+                    ['assign', output_len_id, 1],
+                    ['assign', output_ptr_id, 0],
+                    ['assign', 3, 7],
+                    ['assign', 4, 6],
+                    ['*', 5, 3, 4],
+                    ['write', output_ptr_id, 5]]
+
+# TEST DIVISION BY ZERO
+division_by_zero = [6,
+                    ['assign', output_len_id, 1], 
+                    ['assign', output_ptr_id, 0], 
+                    ['assign', 3, 10],
+                    ['assign', 4, 0],
+                    ['/', 5, 3, 4],
+                    ['write', output_ptr_id, 5]]
+
+# TEST SUBTRACTION TO ZERO
+subtraction_to_zero = [6,
+                       ['assign', output_len_id, 1], 
+                       ['assign', output_ptr_id, 0], 
+                       ['assign', 3, 5],
+                       ['assign', 4, 10],
+                       ['-', 5, 3, 4],
+                       ['write', output_ptr_id, 5]]
+
+# TEST READ AND WRITE TO MEMORY
+read_write_test = [6,
+                   ['assign', output_len_id, 1], 
+                   ['assign', output_ptr_id, 0], 
+                   ['assign', 3, 20],
+                   ['write', 0, 3],
+                   ['read', 4, 0],
+                   ['+', 5, 4, 4],
+                   ['write', output_ptr_id, 5]]
+
+def test():
+    tests["Additional Tests"] = [
+        {
+            "label": "Addition",
+            "input": 0,
+            "test": lambda n: simulator.executeProgram(addition, [n])[0],
+            "expected": 15,
+            "show_expectation": True
+        },
+        {
+            "label": "Multiplication",
+            "input": 0,
+            "test": lambda n: simulator.executeProgram(multiplication, [n])[0],
+            "expected": 42,
+            "show_expectation": True
+        },
+        {
+            "label": "Division by Zero",
+            "input": 0,
+            "test": lambda n: simulator.executeProgram(division_by_zero, [n])[0],
+            "expected": 0,
+            "show_expectation": True
+        },
+        {
+            "label": "Subtraction to Zero",
+            "input": 0,
+            "test": lambda n: simulator.executeProgram(subtraction_to_zero, [n])[0],
+            "expected": 0,
+            "show_expectation": True
+        },
+        {
+            "label": "Read and Write Test",
+            "input": 0,
+            "test": lambda n: simulator.executeProgram(read_write_test, [n])[0],
+            "expected": 40,
+            "show_expectation": True
+        }
+    ]
     tests["Example 0: Unit Tests"] = [
         {
             "label": "Subtract",
@@ -96,8 +180,8 @@ def test() :
             "expected": 0,
             "show_expectation": True
         },
-        # TODO: Add more test cases
-    ]
+    ]        
+    
     tests["Example 1: Factorial Tests"] = [
         {
             "label": "Factorial(0)",
@@ -199,7 +283,7 @@ def test() :
             "expected": 10,
             "show_expectation": True
         },
-        ]     
+        ]    
 
     number_passed = 0
     total_tests = 0

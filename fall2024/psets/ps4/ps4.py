@@ -19,6 +19,31 @@ random.seed(120)
 #                  #
 ####################
 
+'''
+Question 1d: Median Quick Select
+'''
+def MedianQuickSelect(arr, i):
+    n = len(arr)
+    if n == 0:
+        raise ValueError("Array cannot be empty.")
+    if n == 1:
+        return arr[0]
+    
+    sample_indices = random.sample(range(n), 3)
+    sample_elements = [arr[idx][0] for idx in sample_indices]
+    pivot = sorted(sample_elements)[1]
+    A_smaller = [x for x in arr if x[0] < pivot]
+    A_equal = [x for x in arr if x[0] == pivot]
+    A_larger = [x for x in arr if x[0] > pivot]
+    n_smaller, n_equal = len(A_smaller), len(A_equal)
+
+    if i < n_smaller:
+        return MedianQuickSelect(A_smaller, i)
+    elif i >= n_smaller + n_equal:
+        return MedianQuickSelect(A_larger, i - n_smaller - n_equal)
+    else:
+        return A_equal[0]
+
 
 '''
 A Las Vegas Algorithm to find a key-value pair (Ij, Kj) such that Kj is an i’th smallest key.
@@ -35,8 +60,24 @@ def QuickSelect(arr, i):
 
     # Feel free to use get_random_index(arr) or get_random_int(start_inclusive, end_inclusive)
     # ... see the helper functions below
-    pass
-    return (0, -1)
+    n = len(arr)
+    if n == 0:
+        raise ValueError("Array cannot be empty.")
+    if n == 1:
+        return (arr[0][0], arr[0][1])
+    p = get_random_index(arr)
+    pivot = arr[p][0]
+    A_smaller = [x for x in arr if x[0] < pivot]
+    A_equal = [x for x in arr if x[0] == pivot]
+    A_larger = [x for x in arr if x[0] > pivot]
+    n_smaller, n_equal = len(A_smaller), len(A_equal)
+    
+    if i < n_smaller:
+        return QuickSelect(A_smaller, i)
+    elif i >= n_smaller + n_equal:
+        return QuickSelect(A_larger, i - n_smaller - n_equal)
+    else:
+        return A_equal[0]
 
 
 '''
@@ -54,8 +95,8 @@ NOTE: This is different from the QuickSelect definition. This function takes in 
 def MergeSortSelect(arr, query_list):
     # Only call MergeSort once
     # ... MergeSort has already been implemented for you (see below)
-    pass
-    return [(0, -1)] * len(query_list)  # replace this line with your return
+    sorted_arr = MergeSort(arr)
+    return [sorted_arr[q] for q in query_list]
 
 
 ##################################
@@ -67,7 +108,7 @@ def MergeSortSelect(arr, query_list):
 
 def experiments():
     # Edit this parameter
-    k = [1, 1, 1, 1, 1]
+    k = [5, 10, 20, 50]
 
     # Feel free to edit these initial parameters
 
@@ -125,6 +166,17 @@ def experiments():
                 k_record.append(ki)
                 ms_record.append(seconds * 1000)  # Convert seconds to milliseconds
                 algorithm_record.append("MergeSort")
+            
+            # MedianQuickSelect Runs
+            for _ in range(RUNS):
+                start_time = time.time()
+                for q in queries:
+                    MedianQuickSelect(dataset_size_n.copy(), q)
+                seconds = time.time() - start_time
+                n_record.append(ni)
+                k_record.append(ki)
+                ms_record.append(seconds * 1000)
+                algorithm_record.append("MedianQuickSelect")
 
             # Print progress
             iter += 1
@@ -151,7 +203,7 @@ def plot(df, height, width, SAME_AXIS_SCALE, data_field_title):
     # Plot the runtime value
     g.map(sns.kdeplot, data_field_title)
     g.add_legend()
-    plt.show()
+    plt.savefig('runtime_comparison.png')
 
 
 ####################

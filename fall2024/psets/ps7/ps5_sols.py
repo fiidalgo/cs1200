@@ -1,5 +1,4 @@
 from itertools import product, combinations
-from pysat.solvers import Glucose3
 
 '''
 Before you start: Read the README and the Graph implementation below.
@@ -8,6 +7,7 @@ Before you start: Read the README and the Graph implementation below.
 class Graph:
     '''
     A graph data structure with number of nodes N, list of sets of edges, and a list of color labels.
+
     Nodes and colors are both 0-indexed.
     For a given node u, its edges are located at self.edges[u] and its color is self.color[u].
     '''
@@ -63,14 +63,6 @@ class Graph:
             g = g.add_edge(g1u, g2v + g1.N)
         return g
 
-    # Checks if a given subset of nodes is an independent set 
-    def is_independent_set(self, subset):
-        for v in subset:
-            for u in self.edges[v]:
-                if u in subset:
-                    return False
-        return True
-
     # Checks all colors
     def is_graph_coloring_valid(self):
         for u in range(self.N):
@@ -88,6 +80,7 @@ class Graph:
 
 '''
     Introduction: We've implemented exhaustive search for you below.
+
     You don't need to implement any extra code for this part.
 '''
 
@@ -96,7 +89,7 @@ class Graph:
 def exhaustive_search_coloring(G, k=3):
 
     # Iterate through every possible coloring of nodes
-    for coloring in product(range(1,k+1), repeat=G.N):
+    for coloring in product(range(0,k), repeat=G.N):
         G.colors = list(coloring)
         if G.is_graph_coloring_valid():
             return G.colors
@@ -105,16 +98,56 @@ def exhaustive_search_coloring(G, k=3):
     G.reset_colors()
     return None
 
+'''
+IMPORTANT: get_maximal_isets(G) returns a *generator* of the maximal independent sets, not a list
+           This means that instead of calculating all maximal isets at once, it spits them out one
+           by one. One thing you could do is just turn that into a regular list, ie:
+
+               isets = list(get_maximal_isets(G))
+
+           And this will let the helper function generate all isets and toss them into a list.
+           However, that might be inefficient in special cases where the first iset is enough to
+           give you a solution (can you think of a graph where this is the case?). Therefore, it
+           might be better to consider something like the following:
+
+               for iset in get_maximal_isets(G):
+                   do_something_with_iset(iset)
+
+           Keep this in mind if you see that your code is timing out on the test cases - it might
+           mean you need to use this helper function more intelligently.
+'''
+
+# Given an instance of the Graph class G, returns a generator of all maximal independent sets in G
+# Uses helper function impelementing Bron-Kerbosch algorithm
+def get_maximal_isets(G):
+    yield from bron_kerbosch_max_indep_set(G, set(), set(range(G.N)), set())
+
+#Bron-Kerbosch algorithm for finding all maximal independent sets in a graph
+def bron_kerbosch_max_indep_set(G, R, P, X):
+    if len(P)==0 and len(X)==0:
+        yield R.copy()
+    
+    for vertex in P.copy():
+        neighbors = set(G.edges[vertex]).union({vertex})
+        new_P = P.intersection(set(range(G.N)).difference(neighbors))
+        new_X = X.intersection(set(range(G.N)).difference(neighbors))
+        yield from bron_kerbosch_max_indep_set(G, R.union({vertex}), new_P, new_X)
+        
+        P.remove(vertex)
+        X.add(vertex)
 
 
 '''
-    We've implemented bfs_2_coloring for you below.
-    You don't need to implement any extra code for this part.
+    Part A: Implement two coloring via breadth-first search.
+
+    Hint: You will need to adapt the given BFS pseudocode so that it works on all graphs,
+    regardless of whether they are connected.
+
+    When you're finished, check your work by running python3 -m ps5_color_tests 2.
 '''
 
 # Given an instance of the Graph class G and a subset of precolored nodes,
 # Assigns precolored nodes to have color 2, and attempts to color the rest using colors 0 and 1.
-#
 # Precondition: Assumes that the precolored_nodes form an independent set.
 # If successful, modifies G.colors and returns the coloring.
 # If no coloring is possible, resets all of G's colors to None and returns None.
@@ -159,107 +192,28 @@ def bfs_2_coloring(G, precolored_nodes=None):
     return G.colors
 
 '''
-    We've implemented iset_bfs_3_coloring for you below.
-    You don't need to implement any extra code for this part.
+    Part B: Implement the 3-coloring algorithm using the Bron-Kerbosch algorithm and BFS.
+    
+    Make sure to call the bfs_2_coloring function you implemented!
+
+    When you're finished, check your work by running python3 -m ps5_color_tests 3.
+    Don't worry if some of your tests time out: that is expected.
 '''
-#Bron-Kerbosch algorithm for finding all maximal independent sets in a graph
-def bron_kerbosch_max_indep_set(G, R, P, X):
-    if len(P)==0 and len(X)==0:
-        yield R.copy()
 
-    if P.union(X):
-        pivot_edges = G.edges[min(P.union(X), key=lambda v: len(G.edges[v]))]
-    else:
-        pivot_edges = set()
-
-    for vertex in P.copy() - pivot_edges:
-        neighbors = set(G.edges[vertex]).union({vertex})
-        new_P = P.intersection(set(range(G.N)).difference(neighbors))
-        new_X = X.intersection(set(range(G.N)).difference(neighbors))
-        yield from bron_kerbosch_max_indep_set(G, R.union({vertex}), new_P, new_X)
-        
-        P.remove(vertex)
-        X.add(vertex)
-
-def max_indep_set_gen(G):
-    yield from bron_kerbosch_max_indep_set(G, set(), set(range(G.N)), set())
-
-# Given an instance of the Graph class G and a subset of precolored nodes, searches for a 3 coloring
+# Given an instance of the Graph class G (which has a subset of precolored nodes), searches for a 3 coloring
+# If successful, modifies G.colors and returns the coloring.
+# If no coloring is possible, resets all of G's colors to None and returns None.
 def iset_bfs_3_coloring(G):
-    for mis in max_indep_set_gen(G):
+
+    for mis in get_maximal_isets(G):
         coloring = bfs_2_coloring(G, precolored_nodes=mis)
         if coloring:
             return coloring
     return None
 
-'''
-    Part A: Implement the reduction to SAT. 
-    Here, you should use the SAT solver that we've defined to add clauses, and use the built-in get_model function
-    to find the solution if one exists.
-    Link to documentation: https://pysathq.github.io/docs/html/api/solvers.html#pysat.solvers.Solver.get_model
-    Hint: There are three parts to this problem.
-    1. Transform the graph into an input that can be fed into the SAT solver.
-    2. Run the solver using the solver.solve() and solver.get_model() functions. We have added this part for you.
-    3. Transform the solver output into a valid coloring if one exists, else return None.
-    When you're finished, check your work by running python3 -m ps8_color_tests 3.
-    Don't worry if some of your tests time out: that is expected.
-'''
-
-# Given an instance of the Graph class G, reduces 3 coloring to SAT
-# If successful, modifies G.colors and returns the coloring.
-# If no coloring is possible, resets all of G's colors to None and returns None.
-def sat_3_coloring(G):
-    solver = Glucose3()
-
-    # TODO: Add the clauses to the solver
-    N = G.N
-
-    # Each node must have at least one color
-    for i in range(N):
-        clause = [3 * i + c + 1 for c in range(3)]
-        solver.add_clause(clause)
-
-    # Each node must not have more than one color
-    for i in range(N):
-        for c1 in range(3):
-            for c2 in range(c1 + 1, 3):
-                clause = [-(3 * i + c1 + 1), -(3 * i + c2 + 1)]
-                solver.add_clause(clause)
-    
-    # Adjacent nodes must not share same color
-    for i in range(N):
-        for j in G.edges[i]:
-            if i < j:
-                for c in range(3):
-                    clause = [-(3 * i + c + 1), -(3 * j + c + 1)]
-                    solver.add_clause(clause)
-
-    # Attempt to solve, return None if no solution possible
-    if not solver.solve():
-        G.reset_colors()
-        return None
-
-    # Accesses the model in form [-v1, v2, -v3 ...], which denotes v1 = False, v2 = True, v3 = False, etc.
-    solution = solver.get_model()
-
-    # TODO: If a solution is found, convert it into a coloring and update G.colors
-
-    # Interpret solution to assign colors
-    G.colors = [None] * N
-    true_vars = set(lit for lit in solution if lit > 0)
-
-    for i in range(N):
-        for c in range(3):
-            v = 3 * i + c + 1
-            if v in true_vars:
-                G.colors[i] = c
-                break
-
-    return G.colors
-
-# Feel free to add miscellaneous tests below!
+# random graph testing
 if __name__ == "__main__":
     G0 = Graph(2).add_edge(0, 1)
     print(bfs_2_coloring(G0))
     print(iset_bfs_3_coloring(G0))
-    print(sat_3_coloring(G0))
+    
